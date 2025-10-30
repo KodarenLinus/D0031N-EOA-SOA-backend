@@ -15,4 +15,9 @@ public class ModuleDto {
     public String getNamn() { return namn; }
     public Double getHp() { return hp; }
     public boolean isAktiv() { return aktiv; }
+
+    public void setKod(String v) { this.kod=v; }
+    public void setNamn(String v) { this.namn=v; }
+    public void setHp(Double v) { this.hp=v; }
+    public void setAktiv(boolean v) { this.aktiv=v; }
 }

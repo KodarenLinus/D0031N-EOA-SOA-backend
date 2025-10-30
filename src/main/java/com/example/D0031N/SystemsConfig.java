@@ -2,44 +2,56 @@ package com.example.D0031N;
 
 import javax.sql.DataSource;
 import com.zaxxer.hikari.HikariDataSource;
-import org.flywaydb.core.Flyway;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
+@EnableTransactionManagement
 public class SystemsConfig {
 
-    // ---- Epok ----
-    @Bean @ConfigurationProperties("spring.datasource.epok")
+    // ----- Epok (PRIMARY / default) -----
+    @Bean
+    @ConfigurationProperties("spring.datasource.epok")
     public DataSourceProperties epokProps() { return new DataSourceProperties(); }
 
     @Bean("epokDs")
+    @Primary
     public DataSource epokDs(@Qualifier("epokProps") DataSourceProperties p) {
-        return p.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+        return p.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)     // säkerställ Hikari
+                .build();
     }
 
     @Bean("epokJdbi")
+    @Primary
     public Jdbi epokJdbi(@Qualifier("epokDs") DataSource ds) {
         return Jdbi.create(ds).installPlugin(new SqlObjectPlugin());
     }
 
-    @Bean(name="epokFlyway", initMethod="migrate")
-    public Flyway epokFlyway(@Qualifier("epokDs") DataSource ds) {
-        return Flyway.configure().dataSource(ds)
-                .locations("classpath:db/migration/epok").load();
+    @Bean("epokTx")
+    @Primary
+    public DataSourceTransactionManager epokTx(@Qualifier("epokDs") DataSource ds) {
+        return new DataSourceTransactionManager(ds);
     }
 
-    // ---- StudentITS ----
-    @Bean @ConfigurationProperties("spring.datasource.studentits")
+    // ----- StudentITS -----
+    @Bean
+    @ConfigurationProperties("spring.datasource.studentits")
     public DataSourceProperties studentProps() { return new DataSourceProperties(); }
 
     @Bean("studentDs")
     public DataSource studentDs(@Qualifier("studentProps") DataSourceProperties p) {
-        return p.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+        return p.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
     }
 
     @Bean("studentJdbi")
@@ -47,19 +59,21 @@ public class SystemsConfig {
         return Jdbi.create(ds).installPlugin(new SqlObjectPlugin());
     }
 
-    @Bean(name="studentFlyway", initMethod="migrate")
-    public Flyway studentFlyway(@Qualifier("studentDs") DataSource ds) {
-        return Flyway.configure().dataSource(ds)
-                .locations("classpath:db/migration/studentits").load();
+    @Bean("studentTx")
+    public DataSourceTransactionManager studentTx(@Qualifier("studentDs") DataSource ds) {
+        return new DataSourceTransactionManager(ds);
     }
 
-    // ---- Ladok ----
-    @Bean @ConfigurationProperties("spring.datasource.ladok")
+    // ----- Ladok -----
+    @Bean
+    @ConfigurationProperties("spring.datasource.ladok")
     public DataSourceProperties ladokProps() { return new DataSourceProperties(); }
 
     @Bean("ladokDs")
     public DataSource ladokDs(@Qualifier("ladokProps") DataSourceProperties p) {
-        return p.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+        return p.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
     }
 
     @Bean("ladokJdbi")
@@ -67,9 +81,8 @@ public class SystemsConfig {
         return Jdbi.create(ds).installPlugin(new SqlObjectPlugin());
     }
 
-    @Bean(name="ladokFlyway", initMethod="migrate")
-    public Flyway ladokFlyway(@Qualifier("ladokDs") DataSource ds) {
-        return Flyway.configure().dataSource(ds)
-                .locations("classpath:db/migration/ladok").load();
+    @Bean("ladokTx")
+    public DataSourceTransactionManager ladokTx(@Qualifier("ladokDs") DataSource ds) {
+        return new DataSourceTransactionManager(ds);
     }
 }

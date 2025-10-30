@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/epok")
 public class EpokController {
     private final Jdbi jdbi;
-    public EpokController(@Qualifier("epokJdbi") Jdbi jdbi) { this.jdbi = jdbi; }
+
+    public EpokController(@Qualifier("epokJdbi") Jdbi jdbi) {
+        this.jdbi = jdbi;
+    }
 
     @GetMapping("/courses/{kurskod}/modules")
     public ResponseEntity<List<ModuleDto>> getModules(@PathVariable String kurskod) {
