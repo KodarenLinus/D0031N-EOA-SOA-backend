@@ -6,6 +6,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/*
+*
+* This it the rest controller for epok
+* In this controller we expose the diffrent services.
+*
+* */
 @RestController
 @RequestMapping("/epok")
 public class EpokController {
