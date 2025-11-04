@@ -1,19 +1,19 @@
-# 🐳 Docker Setup – PostgreSQL + pgAdmin
+# Docker & PostgreSQL – Komplett README (TXT)
 
-Detta projekt innehåller en färdig **Docker-baserad databas­miljö** bestående av:
+Detta är en komplett textbaserad README för din miljö med Docker, PostgreSQL 17 och pgAdmin 4.
+Allt är formaterat för att fungera i en .txt-fil (du kan även döpa den till README.md om du vill).
 
-- **PostgreSQL 17** – databas­server  
-- **pgAdmin 4** – administrationsgränssnitt (både web och desktop)  
-- Automatiska **init-skript** som skapar roller, databaser, tabeller och seed-data
+==================================================
+1) ÖVERSIKT
+==================================================
+- PostgreSQL 17 körs i Docker (tjänstnamn: uni-postgres)
+- pgAdmin 4 körs i Docker (webb på http://localhost:5050) och/eller som Desktop-app
+- Init-skript i docker/init/ skapar roller, databaser, tabeller och seed-data första gången
 
-Perfekt för lokal utveckling av backend och API-projekt.
+==================================================
+2) PROJEKTSTRUKTUR
+==================================================
 
----
-
-## 🧱 Struktur
-
-
-```text
 D0031N-EOA-SOA-backend/
 │
 ├── docker/
@@ -27,67 +27,194 @@ D0031N-EOA-SOA-backend/
 │   │   ├── 30_ladok_schema.sql
 │   │   ├── 31_ladok_seed.sql
 │   └── pgadmin/
-│       └── servers.json          # Fördefinierade pgAdmin-anslutningar
+│       └── servers.json          # Fördefinierade pgAdmin-anslutningar (webb)
 │
 ├── docker-compose.yml
 ├── .env                          # Miljövariabler (lösenord, portar, mm)
-└── README.md                     # Denna fil
-```
+└── README.txt                    # Denna fil (kan döpas till README.md)
 
----
+==================================================
+3) .ENV – MILJÖVARIABLER
+==================================================
+Exempelvärden (byt gärna till starkare lösenord i din egna .env):
 
-## ⚙️ Konfiguration (.env)
+POSTGRES_SUPERUSER=postgres
+POSTGRES_PASSWORD=Linus
 
-# Postgres  
-POSTGRES_SUPERUSER=postgres  
-POSTGRES_PASSWORD=Linus  
+PGADMIN_EMAIL=linus.sideback03@gmail.com
+PGADMIN_PASSWORD=Linus
 
-# pgAdmin  
-PGADMIN_EMAIL=linus.sideback03@gmail.com  
-PGADMIN_PASSWORD=Linus  
+# Host-port som mappas till Postgres i containern
+PG_PORT=5433
 
-# Host port for database  
-PG_PORT=5433  
+OBS: Lägg .env i .gitignore. Skapa en .env.example utan hemligheter för repo.
 
----
+==================================================
+4) STARTA DOCKER-MILJÖN
+==================================================
+Kör i projektroten (C:\Users\Linus\IdeaProjects\D0031N-EOA-SOA-backend):
 
-## 🚀 Starta miljön
+- Stäng gamla containrar (valfritt):
+  docker compose down
 
-docker compose down  
-docker volume rm d0031n-eoa-soa-backend_pgdata  
-docker compose up -d  
+- Nollställ DB-volymen (valfritt – raderar data, kör init på nytt):
+  docker volume rm d0031n-eoa-soa-backend_pgdata
 
-docker ps
+- Starta allt:
+  docker compose up -d
 
-uni-postgres   → 0.0.0.0:5433->5432/tcp  
-pgadmin        → 0.0.0.0:5050->80/tcp  
+- Verifiera:
+  docker ps
+  (Du bör se uni-postgres på 0.0.0.0:5433->5432/tcp och pgadmin på 0.0.0.0:5050->80/tcp)
 
----
+==================================================
+5) INIT-SKRIPT – VAD SOM SKAPAS
+==================================================
+Första gången volymen skapas körs alla .sql i docker/init/ i filnamnsordning och skapar bl.a.:
+- Roller: epok, ladok, studentits
+- Databaser: epok, ladok, studentits
+- Scheman/tabeller och seed-data
 
-## 💻 Anslutning
+Visa Postgres-loggar:
+  docker compose logs postgres
 
-### pgAdmin Web
-ex:
-http://localhost:5050  
-Email: linus.sideback03@gmail.com  
-Password: LinusS
+Lista databaser i containern:
+  docker exec -it uni-postgres psql -U postgres -d postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false ORDER BY 1;"
 
+==================================================
+6) ANSLUTNINGAR
+==================================================
+A) pgAdmin Web (Docker)
+- URL: http://localhost:5050
+- Login:
+  Email:    linus.sideback03@gmail.com
+  Password: Linus
+- Serverns host inuti pgAdmin Web ska vara: postgres (Docker-tjänstnamnet)
 
-### pgAdmin Desktop
-ex:
-Host: localhost  
-Port: 5433  
-User: postgres  
-Password: LinusS
+B) pgAdmin Desktop (installerad app)
+- Register → Server → Connection:
+  Host: localhost
+  Port: 5433
+  Maintenance DB: postgres
+  Username: postgres
+  Password: Linus
+  SSL mode: Prefer
 
----
+==================================================
+7) BACKUP & RESTORE (I DOCKER)
+==================================================
+A) Full backup av hela klustret (roller + alla DB):
+  docker exec -t uni-postgres pg_dumpall -U postgres -f /tmp/backup_all.sql
+  docker cp uni-postgres:/tmp/backup_all.sql .\backup_all.sql
 
-## 🧩 Backup & Restore
+B) Per-databas backup (custom format – rekommenderas för snabb restore):
+  docker exec -t uni-postgres pg_dump -U postgres -d epok       -Fc -f /tmp/epok.dump
+  docker exec -t uni-postgres pg_dump -U postgres -d ladok      -Fc -f /tmp/ladok.dump
+  docker exec -t uni-postgres pg_dump -U postgres -d studentits -Fc -f /tmp/studentits.dump
+  docker cp uni-postgres:/tmp/epok.dump       .\epok.dump
+  docker cp uni-postgres:/tmp/ladok.dump      .\ladok.dump
+  docker cp uni-postgres:/tmp/studentits.dump .\studentits.dump
 
-Backup:  
-docker exec -t uni-postgres pg_dumpall -U postgres > backup.sql  
+==================================================
+8) FLYTTA FRÅN DOCKER → LOKAL POSTGRES (UTAN DOCKER)
+==================================================
+Förutsättningar:
+- Lokal Postgres-tjänst körs på localhost:5432 och har ett känt lösenord (t.ex. Linus för användaren postgres)
+- Stoppa Docker-Postgres om den också använder port 5432
 
-Restore:  
-docker exec -i uni-postgres psql -U postgres -f /path/in/container/backup.sql  
+METOD 1 – Per databas (rekommenderad, undviker encodingproblem):
+1) Skapa tomma DB:er lokalt (i pgAdmin Desktop eller via kommando):
+   createdb -h localhost -p 5432 -U postgres epok
+   createdb -h localhost -p 5432 -U postgres ladok
+   createdb -h localhost -p 5432 -U postgres studentits
+   (På Windows utan PATH: använd t.ex. "C:\Program Files\PostgreSQL\17\bin\createdb.exe" ...)
 
-Du har nu en **helt fungerande lokal PostgreSQL-databas i Docker** som fungerar med både pgAdmin och Spring Boot.
+2) Återställ .dump-filerna till lokal Postgres med en tillfällig klientcontainer (inget lokalt psql krävs):
+   docker run --rm -e PGPASSWORD=Linus -v ${PWD}:/backup postgres:17 \
+     pg_restore -h host.docker.internal -p 5432 -U postgres -d epok       -c -j4 /backup/epok.dump
+
+   docker run --rm -e PGPASSWORD=Linus -v ${PWD}:/backup postgres:17 \
+     pg_restore -h host.docker.internal -p 5432 -U postgres -d ladok      -c -j4 /backup/ladok.dump
+
+   docker run --rm -e PGPASSWORD=Linus -v ${PWD}:/backup postgres:17 \
+     pg_restore -h host.docker.internal -p 5432 -U postgres -d studentits -c -j4 /backup/studentits.dump
+
+3) Uppdatera collation-version (om Postgres varnar):
+   ALTER DATABASE epok       REFRESH COLLATION VERSION;
+   ALTER DATABASE ladok      REFRESH COLLATION VERSION;
+   ALTER DATABASE studentits REFRESH COLLATION VERSION;
+
+4) Kör sedan REINDEX på varje databas (utanför transaktion):
+   REINDEX (VERBOSE) DATABASE epok;
+   REINDEX (VERBOSE) DATABASE ladok;
+   REINDEX (VERBOSE) DATABASE studentits;
+   REINDEX (VERBOSE) DATABASE postgres;
+
+METOD 2 – Hela klustret (roller + DBs) i ett svep:
+1) Skapa UTF-8-säker dump inuti containern och kopiera ut:
+   docker exec -t uni-postgres pg_dumpall -U postgres -f /tmp/backup_all.sql
+   docker cp uni-postgres:/tmp/backup_all.sql .\backup_all.sql
+
+2) Återställ till lokal Postgres med tillfällig klientcontainer:
+   docker run --rm -e PGPASSWORD=Linus -v ${PWD}:/backup postgres:17 \
+     psql -h host.docker.internal -p 5432 -U postgres -f /backup/backup_all.sql
+
+3) Om du får collation-varning:
+   ALTER DATABASE postgres   REFRESH COLLATION VERSION;
+   REINDEX (VERBOSE) DATABASE postgres;
+   REINDEX (VERBOSE) DATABASE epok;
+   REINDEX (VERBOSE) DATABASE ladok;
+   REINDEX (VERBOSE) DATABASE studentits;
+
+==================================================
+9) TESTA OCH VERIFIERA
+==================================================
+- Testa porten:
+  Test-NetConnection localhost -Port 5433  (Docker)  eller  -Port 5432 (lokal)
+
+- Lista DB:er i Docker:
+  docker exec -it uni-postgres psql -U postgres -d postgres -c "\l"
+
+- Lista DB:er lokalt (om psql finns i PATH):
+  psql -h localhost -p 5432 -U postgres -d postgres -c "\l"
+
+==================================================
+10) FELSÖKNING
+==================================================
+- "not recognized" på psql/pg_restore/createdb:
+  * Lägg till "C:\Program Files\PostgreSQL\17\bin" i PATH
+  * Eller använd Docker-klientcontainern som i exemplen ovan
+
+- Connection refused:
+  * Kontrollera att rätt server körs på rätt port
+  * Stoppa Docker-Postgres om du använder lokal 5432
+
+- password authentication failed:
+  * ALTER USER postgres WITH PASSWORD 'Linus';
+
+- Collation-version mismatch:
+  * Kör REFRESH COLLATION VERSION och därefter REINDEX (VERBOSE) DATABASE ...
+
+==================================================
+11) SPRING BOOT – EXEMPEL PÅ KONFIG
+==================================================
+application.properties
+
+spring.datasource.url=jdbc:postgresql://localhost:5433/postgres
+spring.datasource.username=postgres
+spring.datasource.password=Linus
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.jpa.hibernate.ddl-auto=none
+
+(Om du kör helt lokalt utan Docker, byt port till 5432.)
+
+==================================================
+12) SAMMANFATTNING
+==================================================
+- Docker-miljön: Postgres på localhost:5433, pgAdmin på http://localhost:5050
+- Desktop pgAdmin kopplar till Docker med Host=localhost, Port=5433
+- För att flytta till lokal Postgres (5432): dumpa per DB i Docker och pg_restore lokalt
+- Efter återställning: kör REFRESH COLLATION VERSION och REINDEX (VERBOSE) DATABASE ...
+- Undvik PowerShell-redirection (skapar UTF-16-filer) – dumpa alltid inuti containern och docker cp ut
+
+Du har nu en komplett guide för att köra, flytta och underhålla din databasmiljö i Docker och lokalt.
