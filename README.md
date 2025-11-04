@@ -122,14 +122,13 @@ Förutsättningar:
 - Lokal Postgres-tjänst körs på localhost:5432 och har ett känt lösenord (t.ex. Linus för användaren postgres)
 - Stoppa Docker-Postgres om den också använder port 5432
 
-METOD 1 – Per databas (rekommenderad, undviker encodingproblem):
+METOD 1 – Per databas (rekommenderad):
 1) Skapa tomma DB:er lokalt (i pgAdmin Desktop eller via kommando):
    createdb -h localhost -p 5432 -U postgres epok
    createdb -h localhost -p 5432 -U postgres ladok
    createdb -h localhost -p 5432 -U postgres studentits
-   (På Windows utan PATH: använd t.ex. "C:\Program Files\PostgreSQL\17\bin\createdb.exe" ...)
 
-2) Återställ .dump-filerna till lokal Postgres med en tillfällig klientcontainer (inget lokalt psql krävs):
+2) Återställ .dump-filerna lokalt via tillfällig klientcontainer:
    docker run --rm -e PGPASSWORD=Linus -v ${PWD}:/backup postgres:17 \
      pg_restore -h host.docker.internal -p 5432 -U postgres -d epok       -c -j4 /backup/epok.dump
 
@@ -144,61 +143,16 @@ METOD 1 – Per databas (rekommenderad, undviker encodingproblem):
    ALTER DATABASE ladok      REFRESH COLLATION VERSION;
    ALTER DATABASE studentits REFRESH COLLATION VERSION;
 
-4) Kör sedan REINDEX på varje databas (utanför transaktion):
+4) Kör sedan REINDEX på varje databas:
    REINDEX (VERBOSE) DATABASE epok;
    REINDEX (VERBOSE) DATABASE ladok;
    REINDEX (VERBOSE) DATABASE studentits;
    REINDEX (VERBOSE) DATABASE postgres;
 
-METOD 2 – Hela klustret (roller + DBs) i ett svep:
-1) Skapa UTF-8-säker dump inuti containern och kopiera ut:
-   docker exec -t uni-postgres pg_dumpall -U postgres -f /tmp/backup_all.sql
-   docker cp uni-postgres:/tmp/backup_all.sql .\backup_all.sql
-
-2) Återställ till lokal Postgres med tillfällig klientcontainer:
-   docker run --rm -e PGPASSWORD=Linus -v ${PWD}:/backup postgres:17 \
-     psql -h host.docker.internal -p 5432 -U postgres -f /backup/backup_all.sql
-
-3) Om du får collation-varning:
-   ALTER DATABASE postgres   REFRESH COLLATION VERSION;
-   REINDEX (VERBOSE) DATABASE postgres;
-   REINDEX (VERBOSE) DATABASE epok;
-   REINDEX (VERBOSE) DATABASE ladok;
-   REINDEX (VERBOSE) DATABASE studentits;
-
 ==================================================
-9) TESTA OCH VERIFIERA
+9) SPRING BOOT – EXEMPEL PÅ KONFIG
 ==================================================
-- Testa porten:
-  Test-NetConnection localhost -Port 5433  (Docker)  eller  -Port 5432 (lokal)
-
-- Lista DB:er i Docker:
-  docker exec -it uni-postgres psql -U postgres -d postgres -c "\l"
-
-- Lista DB:er lokalt (om psql finns i PATH):
-  psql -h localhost -p 5432 -U postgres -d postgres -c "\l"
-
-==================================================
-10) FELSÖKNING
-==================================================
-- "not recognized" på psql/pg_restore/createdb:
-  * Lägg till "C:\Program Files\PostgreSQL\17\bin" i PATH
-  * Eller använd Docker-klientcontainern som i exemplen ovan
-
-- Connection refused:
-  * Kontrollera att rätt server körs på rätt port
-  * Stoppa Docker-Postgres om du använder lokal 5432
-
-- password authentication failed:
-  * ALTER USER postgres WITH PASSWORD 'Linus';
-
-- Collation-version mismatch:
-  * Kör REFRESH COLLATION VERSION och därefter REINDEX (VERBOSE) DATABASE ...
-
-==================================================
-11) SPRING BOOT – EXEMPEL PÅ KONFIG
-==================================================
-application.properties
+application.properties:
 
 spring.datasource.url=jdbc:postgresql://localhost:5433/postgres
 spring.datasource.username=postgres
@@ -209,7 +163,7 @@ spring.jpa.hibernate.ddl-auto=none
 (Om du kör helt lokalt utan Docker, byt port till 5432.)
 
 ==================================================
-12) SAMMANFATTNING
+10) SAMMANFATTNING
 ==================================================
 - Docker-miljön: Postgres på localhost:5433, pgAdmin på http://localhost:5050
 - Desktop pgAdmin kopplar till Docker med Host=localhost, Port=5433
