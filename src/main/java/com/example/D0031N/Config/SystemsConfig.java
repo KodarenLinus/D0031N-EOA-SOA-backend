@@ -1,4 +1,4 @@
-package com.example.D0031N;
+package com.example.D0031N.Config;
 
 import javax.sql.DataSource;
 import com.zaxxer.hikari.HikariDataSource;
