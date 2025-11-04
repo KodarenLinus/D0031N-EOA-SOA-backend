@@ -67,15 +67,18 @@ pgadmin        → 0.0.0.0:5050->80/tcp
 ## 💻 Anslutning
 
 ### pgAdmin Web
+ex:
 http://localhost:5050  
 Email: linus.sideback03@gmail.com  
-Password: Linus  
+Password: LinusS
+
 
 ### pgAdmin Desktop
+ex:
 Host: localhost  
 Port: 5433  
 User: postgres  
-Password: Linus  
+Password: LinusS
 
 ---
 
