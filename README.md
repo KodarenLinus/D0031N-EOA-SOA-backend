@@ -14,6 +14,7 @@ Allt är formaterat för att fungera i en .txt-fil (du kan även döpa den till 
 2) PROJEKTSTRUKTUR
 ==================================================
 
+```text
 D0031N-EOA-SOA-backend/
 │
 ├── docker/
@@ -32,6 +33,7 @@ D0031N-EOA-SOA-backend/
 ├── docker-compose.yml
 ├── .env                          # Miljövariabler (lösenord, portar, mm)
 └── README.txt                    # Denna fil (kan döpas till README.md)
+```
 
 ==================================================
 3) .ENV – MILJÖVARIABLER
