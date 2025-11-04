@@ -17,10 +17,35 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class SystemsConfig {
 
+    @Bean
+    @ConfigurationProperties("spring.datasource.canvas")
+    public DataSourceProperties canvasProps() {
+        return new DataSourceProperties();
+    }
+
+    @Bean("canvasDs")
+    public DataSource canvasDs(@Qualifier("canvasProps") DataSourceProperties p) {
+        return p.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
+    }
+
+    @Bean("canvasJdbi")
+    public Jdbi canvasJdbi(@Qualifier("canvasDs") DataSource ds) {
+        return Jdbi.create(ds).installPlugin(new SqlObjectPlugin());
+    }
+
+    @Bean("canvasTx")
+    public DataSourceTransactionManager canvasTx(@Qualifier("canvasDs") DataSource ds) {
+        return new DataSourceTransactionManager(ds);
+    }
+
     // ----- Epok (PRIMARY / default) -----
     @Bean
     @ConfigurationProperties("spring.datasource.epok")
-    public DataSourceProperties epokProps() { return new DataSourceProperties(); }
+    public DataSourceProperties epokProps() {
+        return new DataSourceProperties();
+    }
 
     @Bean("epokDs")
     @Primary
