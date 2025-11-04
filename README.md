@@ -12,6 +12,8 @@ Perfekt för lokal utveckling av backend och API-projekt.
 
 ## 🧱 Struktur
 
+
+```text
 D0031N-EOA-SOA-backend/
 │
 ├── docker/
@@ -30,6 +32,7 @@ D0031N-EOA-SOA-backend/
 ├── docker-compose.yml
 ├── .env                          # Miljövariabler (lösenord, portar, mm)
 └── README.md                     # Denna fil
+```
 
 ---
 
