@@ -1,0 +1,28 @@
+package com.example.D0031N.Canvas;
+
+import org.jdbi.v3.core.Jdbi;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/canvas")
+public class CanvasController {
+
+    private final Jdbi jdbi;
+
+    public CanvasController(@Qualifier("canvasJdbi") Jdbi jdbi) {
+        this.jdbi = jdbi;
+    }
+
+    @GetMapping("/courses/{kurskod}/assignments")
+    public List<AssignmentDto> listAssignments(@PathVariable String kurskod) {
+        return jdbi.onDemand(CanvasDao.class).findAssignmentsByCourse(kurskod);
+    }
+
+    @GetMapping("/assignments/{assignmentId}/grades")
+    public List<GradeDto> listGrades(@PathVariable Long assignmentId) {
+        return jdbi.onDemand(CanvasDao.class).findGradesByAssignment(assignmentId);
+    }
+}
