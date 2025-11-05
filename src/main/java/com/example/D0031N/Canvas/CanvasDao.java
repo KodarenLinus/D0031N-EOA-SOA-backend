@@ -1,3 +1,4 @@
+// com/example/D0031N/Canvas/CanvasDao.java
 package com.example.D0031N.Canvas;
 
 import org.jdbi.v3.sqlobject.config.RegisterBeanMapper;
@@ -9,69 +10,56 @@ import java.util.List;
 
 public interface CanvasDao {
 
-    // Hämta assignments för kurskod via join: assignment -> module -> course
+    // === Assignments per kurskod ===
     @SqlQuery("""
         SELECT 
-            a.assignment_id AS id, 
-            a.name, 
-            a.scale_hint, 
+            a.assignment_id AS id,
+            a.name,
+            a.scale_hint AS scaleHint,
             a.type
-        FROM 
-            canvas.assignment a
-        JOIN 
-            canvas.module m   
-        ON 
-            m.module_id = a.module_id
-        JOIN 
-            canvas.course c   
-        ON 
-            c.course_id = m.course_id
-        WHERE 
-            c.course_code = :kurskod
-        ORDER BY 
-            a.assignment_id
+        FROM canvas.assignment a
+        JOIN canvas.module m ON a.module_id = m.module_id
+        JOIN canvas.course c ON m.course_id = c.course_id
+        WHERE c.course_code = :kurskod
+        ORDER BY a.assignment_id
     """)
     @RegisterBeanMapper(AssignmentDto.class)
     List<AssignmentDto> findAssignmentsByCourse(@Bind("kurskod") String kurskod);
 
-    // Lista betyg för ett assignment (grade -> submission för student_id)
+    // === Grades per assignment (för GET /assignments/{id}/grades) ===
     @SqlQuery("""
         SELECT 
             s.student_id AS studentId,
             g.grade      AS grade,
             g.comment    AS comment,
             to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS') AS gradedAt
-        FROM 
-            canvas.grade g
-        JOIN 
-            canvas.submission s 
-        ON 
-            s.submission_id = g.submission_id
-        WHERE 
-            s.assignment_id = :assignmentId
-        ORDER BY 
-            s.student_id
+        FROM canvas.grade g
+        JOIN canvas.submission s ON s.submission_id = g.submission_id
+        WHERE s.assignment_id = :assignmentId
+        ORDER BY s.student_id
     """)
     @RegisterBeanMapper(GradeDto.class)
     List<GradeDto> findGradesByAssignment(@Bind("assignmentId") Long assignmentId);
 
-    // Upsert betyg för (assignmentId, studentId).
-    // Skapar submission om den saknas; uppdaterar befintligt grade annars.
+    // === Upsert grade (skapar submission om saknas; uppdaterar annars) ===
     @SqlUpdate("""
         WITH existing_sub AS (
           SELECT submission_id
           FROM canvas.submission
           WHERE assignment_id = :assignmentId AND student_id = :studentId
-        ), ins_sub AS (
+        ),
+        ins_sub AS (
           INSERT INTO canvas.submission(assignment_id, student_id, submission_date)
           SELECT :assignmentId, :studentId, now()
           WHERE NOT EXISTS (SELECT 1 FROM existing_sub)
           RETURNING submission_id
-        ), sub_union AS (
+        ),
+        sub_union AS (
           SELECT submission_id FROM ins_sub
           UNION ALL
           SELECT submission_id FROM existing_sub
-        ), upd AS (
+        ),
+        upd AS (
           UPDATE canvas.grade g
           SET grade = :grade,
               comment = :comment,
@@ -91,4 +79,41 @@ public interface CanvasDao {
                      @Bind("grade") String grade,
                      @Bind("comment") String comment,
                      @Bind("gradedAt") String gradedAtNullable);
+
+    // === Roster utan betyg (alla registrerade studenter i kursen) ===
+    @SqlQuery("""
+        SELECT 
+            s.student_id AS studentId,
+            (COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')) AS name,
+            s.email AS email
+        FROM canvas.course c
+        JOIN canvas.course_registration r ON r.course_id = c.course_id
+        JOIN canvas.student s            ON s.student_id = r.student_id
+        WHERE c.course_code = :kurskod
+        ORDER BY s.student_id
+    """)
+    @RegisterBeanMapper(CanvasStudentDto.class)
+    List<CanvasStudentDto> listStudentsByCourse(@Bind("kurskod") String kurskod);
+
+    // === Roster + ev. betyg för specifik assignment ===
+    @SqlQuery("""
+        SELECT 
+            s.student_id AS studentId,
+            (COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')) AS name,
+            s.email AS email,
+            g.grade AS canvasGrade,
+            CASE WHEN g.graded_at IS NULL THEN NULL
+                 ELSE to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS')
+            END AS gradedAt
+        FROM canvas.course c
+        JOIN canvas.course_registration r  ON r.course_id = c.course_id
+        JOIN canvas.student s              ON s.student_id = r.student_id
+        LEFT JOIN canvas.submission sub    ON sub.student_id = s.student_id AND sub.assignment_id = :assignmentId
+        LEFT JOIN canvas.grade g           ON g.submission_id = sub.submission_id
+        WHERE c.course_code = :kurskod
+        ORDER BY s.student_id
+    """)
+    @RegisterBeanMapper(CanvasRosterItemDto.class)
+    List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("kurskod") String kurskod,
+                                                       @Bind("assignmentId") Long assignmentId);
 }
