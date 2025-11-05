@@ -6,8 +6,23 @@ import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 
 public interface ResultDao {
     @SqlUpdate("""
-        INSERT INTO results(personnummer, kurskod, modul, datum, betyg, status)
-        VALUES (:pnr, :kurskod, :modul, :datum, :betyg, :status)
+        INSERT INTO 
+            results(
+                personnummer, 
+                kurskod, 
+                modul, 
+                datum, 
+                betyg, 
+                status
+            )
+        VALUES (
+            :pnr, 
+            :kurskod, 
+            :modul, 
+            :datum, 
+            :betyg, 
+            :status
+        )
     """)
     int insert(@Bind("pnr") String pnr,
                @Bind("kurskod") String kurskod,

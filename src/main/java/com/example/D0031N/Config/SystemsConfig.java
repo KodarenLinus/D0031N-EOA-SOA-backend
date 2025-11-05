@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class SystemsConfig {
 
+    // ----- Canvas -----
     @Bean
     @ConfigurationProperties("spring.datasource.canvas")
     public DataSourceProperties canvasProps() {

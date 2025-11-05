@@ -9,8 +9,19 @@ public class PersonnummerDto {
         this.username = username; this.personnummer = personnummer;
     }
 
-    public String getUsername() { return username; }
-    public String getPersonnummer() { return personnummer; }
-    public void setUsername(String v){ this.username=v; }
-    public void setPersonnummer(String v){ this.personnummer=v; }
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPersonnummer() {
+        return personnummer;
+    }
+
+    public void setUsername(String v){
+        this.username=v;
+    }
+
+    public void setPersonnummer(String v){
+        this.personnummer=v;
+    }
 }

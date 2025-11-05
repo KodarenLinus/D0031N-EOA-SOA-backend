@@ -12,12 +12,35 @@ public class GradeDto {
         this.username = username; this.label = label; this.points = points; this.gradedAt = gradedAt;
     }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getLabel() { return label; }
-    public void setLabel(String label) { this.label = label; }
-    public Double getPoints() { return points; }
-    public void setPoints(Double points) { this.points = points; }
-    public String getGradedAt() { return gradedAt; }
-    public void setGradedAt(String gradedAt) { this.gradedAt = gradedAt; }
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public Double getPoints() {
+        return points;
+    }
+
+    public void setPoints(Double points) {
+        this.points = points;
+    }
+
+    public String getGradedAt() {
+        return gradedAt;
+    }
+
+    public void setGradedAt(String gradedAt) {
+        this.gradedAt = gradedAt;
+    }
 }

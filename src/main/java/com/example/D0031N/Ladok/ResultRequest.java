@@ -17,15 +17,42 @@ public class ResultRequest {
     @Size(min=1, max=3)
     private String betyg;
 
-    public String getPersonnummer(){ return personnummer; }
-    public String getKurskod(){ return kurskod; }
-    public String getModul(){ return modul; }
-    public String getDatum(){ return datum; }
-    public String getBetyg(){ return betyg; }
+    public String getPersonnummer(){
+        return personnummer;
+    }
 
-    public void setPersonnummer(String v){ this.personnummer=v; }
-    public void setKurskod(String v){ this.kurskod=v; }
-    public void setModul(String v){ this.modul=v; }
-    public void setDatum(String v){ this.datum=v; }
-    public void setBetyg(String v){ this.betyg=v; }
+    public String getKurskod(){
+        return kurskod;
+    }
+    public String getModul(){
+        return modul;
+    }
+
+    public String getDatum(){
+        return datum;
+    }
+
+    public String getBetyg(){
+        return betyg;
+    }
+
+    public void setPersonnummer(String v){
+        this.personnummer=v;
+    }
+
+    public void setKurskod(String v){
+        this.kurskod=v;
+    }
+
+    public void setModul(String v){
+        this.modul=v;
+    }
+
+    public void setDatum(String v){
+        this.datum=v;
+    }
+
+    public void setBetyg(String v){
+        this.betyg=v;
+    }
 }
