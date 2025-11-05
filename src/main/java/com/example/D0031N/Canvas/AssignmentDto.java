@@ -1,6 +1,7 @@
 // AssignmentDto.java (oförändrad, men ID-fältet heter assignmentId i SELECT:en)
 package com.example.D0031N.Canvas;
 
+// Test
 public class AssignmentDto {
     private Long id;
     private String name;
