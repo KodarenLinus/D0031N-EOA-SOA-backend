@@ -1,7 +1,7 @@
-
 package com.example.D0031N.Canvas;
+
 public record AssignmentDto(
-        Long assignmentId,
+        Long id,
         String name,
         String scaleHint,
         String type

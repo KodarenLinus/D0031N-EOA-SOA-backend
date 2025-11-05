@@ -1,4 +1,3 @@
-// com/example/D0031N/Canvas/CanvasController.java
 package com.example.D0031N.Canvas;
 
 import org.jdbi.v3.core.Jdbi;

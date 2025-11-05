@@ -1,32 +1,38 @@
-// com/example/D0031N/Canvas/CanvasDao.java
+// src/main/java/com/example/D0031N/Canvas/CanvasDao.java
 package com.example.D0031N.Canvas;
 
-import org.jdbi.v3.sqlobject.config.RegisterBeanMapper;
+import org.jdbi.v3.sqlobject.config.RegisterConstructorMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 
 import java.util.List;
 
+// Viktigt: records behöver constructor-mapper (inte BeanMapper)
+@RegisterConstructorMapper(AssignmentDto.class)
+@RegisterConstructorMapper(GradeDto.class)
+@RegisterConstructorMapper(CanvasStudentDto.class)
+@RegisterConstructorMapper(CanvasRosterItemDto.class)
 public interface CanvasDao {
 
     // === Assignments per kurskod ===
+    // Använder schema-kvalificerade tabeller och alias som matchar AssignmentDto
     @SqlQuery("""
         SELECT 
             a.assignment_id AS id,
-            a.name,
-            a.scale_hint AS scaleHint,
-            a.type
+            a.name          AS name,
+            a.scale_hint    AS scaleHint,
+            a.type          AS type
         FROM canvas.assignment a
-        JOIN canvas.module m ON a.module_id = m.module_id
-        JOIN canvas.course c ON m.course_id = c.course_id
+        JOIN canvas.module   m ON a.module_id = m.module_id
+        JOIN canvas.course   c ON m.course_id = c.course_id
         WHERE c.course_code = :kurskod
         ORDER BY a.assignment_id
     """)
-    @RegisterBeanMapper(AssignmentDto.class)
     List<AssignmentDto> findAssignmentsByCourse(@Bind("kurskod") String kurskod);
 
     // === Grades per assignment (för GET /assignments/{id}/grades) ===
+    // Alias matchar GradeDto: studentId, grade, comment, gradedAt
     @SqlQuery("""
         SELECT 
             s.student_id AS studentId,
@@ -38,7 +44,6 @@ public interface CanvasDao {
         WHERE s.assignment_id = :assignmentId
         ORDER BY s.student_id
     """)
-    @RegisterBeanMapper(GradeDto.class)
     List<GradeDto> findGradesByAssignment(@Bind("assignmentId") Long assignmentId);
 
     // === Upsert grade (skapar submission om saknas; uppdaterar annars) ===
@@ -81,6 +86,7 @@ public interface CanvasDao {
                      @Bind("gradedAt") String gradedAtNullable);
 
     // === Roster utan betyg (alla registrerade studenter i kursen) ===
+    // Alias matchar CanvasStudentDto: studentId, name, email
     @SqlQuery("""
         SELECT 
             s.student_id AS studentId,
@@ -92,10 +98,10 @@ public interface CanvasDao {
         WHERE c.course_code = :kurskod
         ORDER BY s.student_id
     """)
-    @RegisterBeanMapper(CanvasStudentDto.class)
     List<CanvasStudentDto> listStudentsByCourse(@Bind("kurskod") String kurskod);
 
     // === Roster + ev. betyg för specifik assignment ===
+    // Alias matchar CanvasRosterItemDto: studentId, name, email, canvasGrade, gradedAt
     @SqlQuery("""
         SELECT 
             s.student_id AS studentId,
@@ -113,7 +119,6 @@ public interface CanvasDao {
         WHERE c.course_code = :kurskod
         ORDER BY s.student_id
     """)
-    @RegisterBeanMapper(CanvasRosterItemDto.class)
     List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("kurskod") String kurskod,
                                                        @Bind("assignmentId") Long assignmentId);
 }
