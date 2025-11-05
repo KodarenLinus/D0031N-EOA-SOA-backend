@@ -4,7 +4,7 @@ package com.example.D0031N.Ladok;
 import jakarta.validation.constraints.*;
 
 public class ResultRequest {
-    @Pattern(regexp="^[0-9]{8}-[0-9]{4}$")
+    @Pattern(regexp="^[0-9]{6}-[0-9]{4}$")
     private String personnummer;
 
     @NotBlank private String kurskod;

@@ -25,4 +25,21 @@ public class CanvasController {
     public List<GradeDto> listGrades(@PathVariable Long assignmentId) {
         return jdbi.onDemand(CanvasDao.class).findGradesByAssignment(assignmentId);
     }
+
+    // 📝 Rättning (skapa/uppdatera betyg) – lärarflödet
+    @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
+    public GradeDto upsertGrade(@PathVariable Long assignmentId,
+                                @PathVariable String studentId,
+                                @RequestBody GradeUpsertDto body) {
+        jdbi.onDemand(CanvasDao.class)
+                .upsertGrade(assignmentId, studentId, body.getGrade(), body.getComment(), body.getGradedAt());
+
+        // returnera aktuell vy efter upsert
+        return jdbi.onDemand(CanvasDao.class)
+                .findGradesByAssignment(assignmentId)
+                .stream()
+                .filter(g -> g.getStudentId().equals(studentId))
+                .findFirst()
+                .orElseGet(() -> new GradeDto(studentId, body.getGrade(), body.getComment(), body.getGradedAt()));
+    }
 }
