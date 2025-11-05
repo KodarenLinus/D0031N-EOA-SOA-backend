@@ -40,25 +40,25 @@ public class CanvasController {
         if (assignmentId == null) {
             // om assignmentId saknas: bygg roster med null betyg
             return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(kurskod).stream()
-                    .map(s -> new CanvasRosterItemDto(s.getStudentId(), s.getName(), s.getEmail(), null, null))
+                    .map(s -> new CanvasRosterItemDto(s.studentId(), s.name(), s.email(), null, null))
                     .toList();
         }
         return jdbi.onDemand(CanvasDao.class).listRosterWithAssignment(kurskod, assignmentId);
     }
 
-    // Rättning (skapa/uppdatera betyg) – lärarflödet (låt stå)
+    // Rättning (skapa/uppdatera betyg) – lärarflödet
     @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
     public GradeDto upsertGrade(@PathVariable Long assignmentId,
                                 @PathVariable String studentId,
                                 @RequestBody GradeUpsertDto body) {
         jdbi.onDemand(CanvasDao.class)
-                .upsertGrade(assignmentId, studentId, body.getGrade(), body.getComment(), body.getGradedAt());
+                .upsertGrade(assignmentId, studentId, body.grade(), body.comment(), body.gradedAt());
 
         return jdbi.onDemand(CanvasDao.class)
                 .findGradesByAssignment(assignmentId)
                 .stream()
-                .filter(g -> g.getStudentId().equals(studentId))
+                .filter(g -> g.studentId().equals(studentId))
                 .findFirst()
-                .orElseGet(() -> new GradeDto(studentId, body.getGrade(), body.getComment(), body.getGradedAt()));
+                .orElseGet(() -> new GradeDto(studentId, body.grade(), body.comment(), body.gradedAt()));
     }
 }
