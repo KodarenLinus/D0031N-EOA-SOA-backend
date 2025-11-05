@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/canvas")
+@RequestMapping("/migrations/migration-canvas")
 public class CanvasController {
 
     private final Jdbi jdbi;

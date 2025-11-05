@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/studentits")
+@RequestMapping("/migrations/migration-studentits")
 public class StudentItsController {
 
     private final Jdbi jdbi;

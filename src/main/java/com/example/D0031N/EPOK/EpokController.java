@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 *
 * */
 @RestController
-@RequestMapping("/epok")
+@RequestMapping("/migrations/migration-epok")
 public class EpokController {
     private final Jdbi jdbi;
 

@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/ladok")
+@RequestMapping("/migrations")
 public class LadokController {
     private final Jdbi jdbi;
 
