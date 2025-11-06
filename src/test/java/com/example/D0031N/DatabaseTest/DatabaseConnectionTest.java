@@ -1,22 +1,18 @@
-package com.example.D0031N;
+package com.example.D0031N.DatabaseTest;
 
 import org.jdbi.v3.core.Jdbi;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.test.context.SpringBootTest;
 
-/**
- * Skriver ut till konsolen när applikationen startar
- * för att bekräfta att varje databas fungerar.
- */
-@Component
-public class DatabaseConnectionChecker implements CommandLineRunner {
+@SpringBootTest
+public class DatabaseConnectionTest {
 
     private final Jdbi epokJdbi;
     private final Jdbi studentitsJdbi;
     private final Jdbi ladokJdbi;
 
-    public DatabaseConnectionChecker(
+    public DatabaseConnectionTest(
             @Qualifier("epokJdbi") Jdbi epokJdbi,
             @Qualifier("studentJdbi") Jdbi studentitsJdbi,
             @Qualifier("ladokJdbi") Jdbi ladokJdbi
@@ -26,8 +22,8 @@ public class DatabaseConnectionChecker implements CommandLineRunner {
         this.ladokJdbi = ladokJdbi;
     }
 
-    @Override
-    public void run(String... args) {
+    @Test
+    public void runDatabaseConnectionTest() {
         System.out.println("🔍 Kontrollerar databasanslutningar...");
 
         try {

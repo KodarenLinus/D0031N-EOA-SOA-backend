@@ -21,9 +21,9 @@ public class EpokController {
         this.jdbi = jdbi;
     }
 
-    @GetMapping("/courses/{kurskod}/modules")
-    public ResponseEntity<List<ModuleDto>> getModules(@PathVariable String kurskod) {
-        var modules = jdbi.onDemand(EpokDao.class).findActiveModules(kurskod);
+    @GetMapping("/courses/{courseCode}/modules")
+    public ResponseEntity<List<ModuleDto>> getModules(@PathVariable String courseCode) {
+        var modules = jdbi.onDemand(EpokDao.class).findActiveModules(courseCode);
         return ResponseEntity.ok(modules);
     }
 }

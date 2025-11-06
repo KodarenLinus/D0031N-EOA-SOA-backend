@@ -17,8 +17,13 @@ public class StudentItsController {
 
     @GetMapping("/users/{username}/personnummer")
     public ResponseEntity<?> getPersonnummer(@PathVariable String username) {
-        String pnr = jdbi.onDemand(StudentDao.class).findPersonnummer(username);
-        if (pnr == null) return ResponseEntity.notFound().build();
+        String pnr = jdbi.onDemand(StudentDao.class)
+                .findPersonnummerByStudentId(username)
+                .orElse(null);
+
+        if (pnr == null || pnr.isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
         return ResponseEntity.ok(new PersonnummerDto(username, pnr));
     }
 }
