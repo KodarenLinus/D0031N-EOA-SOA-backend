@@ -18,8 +18,6 @@ dependencies {
 
 	implementation("org.jdbi:jdbi3-core:3.49.6")
 	implementation("org.jdbi:jdbi3-sqlobject:3.49.6")
-	implementation("org.flywaydb:flyway-core")
-	implementation("org.postgresql:postgresql")
 
 	runtimeOnly("org.postgresql:postgresql")
 
