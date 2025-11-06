@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/migrations/migration-canvas")
+@RequestMapping("/canvas")
 public class CanvasController {
 
     private final Jdbi jdbi;
@@ -16,9 +16,9 @@ public class CanvasController {
         this.jdbi = jdbi;
     }
 
-    @GetMapping("/courses/{kurskod}/assignments")
-    public List<AssignmentDto> listAssignments(@PathVariable String kurskod) {
-        return jdbi.onDemand(CanvasDao.class).findAssignmentsByCourse(kurskod);
+    @GetMapping("/courses/{courseCode}/assignments")
+    public List<AssignmentDto> listAssignments(@PathVariable String courseCode) {
+        return jdbi.onDemand(CanvasDao.class).findAssignmentsByCourse(courseCode);
     }
 
     @GetMapping("/assignments/{assignmentId}/grades")
@@ -27,22 +27,22 @@ public class CanvasController {
     }
 
     // Roster (utan assignment)
-    @GetMapping("/courses/{kurskod}/students")
-    public List<CanvasStudentDto> listStudents(@PathVariable String kurskod) {
-        return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(kurskod);
+    @GetMapping("/courses/{courseCode}/students")
+    public List<CanvasStudentDto> listStudents(@PathVariable String courseCode) {
+        return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(courseCode);
     }
 
     // Roster + Canvas-betyg för given assignment (om du vill se omdömet direkt)
-    @GetMapping("/courses/{kurskod}/roster")
-    public List<CanvasRosterItemDto> listRosterWithAssignment(@PathVariable String kurskod,
+    @GetMapping("/courses/{courseCode}/roster")
+    public List<CanvasRosterItemDto> listRosterWithAssignment(@PathVariable String courseCode,
                                                               @RequestParam(required = false) Long assignmentId) {
         if (assignmentId == null) {
             // om assignmentId saknas: bygg roster med null betyg
-            return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(kurskod).stream()
+            return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(courseCode).stream()
                     .map(s -> new CanvasRosterItemDto(s.studentId(), s.name(), s.email(), null, null))
                     .toList();
         }
-        return jdbi.onDemand(CanvasDao.class).listRosterWithAssignment(kurskod, assignmentId);
+        return jdbi.onDemand(CanvasDao.class).listRosterWithAssignment(courseCode, assignmentId);
     }
 
     // Rättning (skapa/uppdatera betyg) – lärarflödet

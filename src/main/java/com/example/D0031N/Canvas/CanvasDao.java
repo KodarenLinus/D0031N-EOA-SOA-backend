@@ -15,8 +15,6 @@ import java.util.List;
 @RegisterConstructorMapper(CanvasRosterItemDto.class)
 public interface CanvasDao {
 
-    // === Assignments per kurskod ===
-    // Använder schema-kvalificerade tabeller och alias som matchar AssignmentDto
     @SqlQuery("""
         SELECT 
             a.assignment_id AS id,
@@ -26,10 +24,10 @@ public interface CanvasDao {
         FROM canvas.assignment a
         JOIN canvas.module   m ON a.module_id = m.module_id
         JOIN canvas.course   c ON m.course_id = c.course_id
-        WHERE c.course_code = :kurskod
+        WHERE c.course_code = :courseCode
         ORDER BY a.assignment_id
     """)
-    List<AssignmentDto> findAssignmentsByCourse(@Bind("kurskod") String kurskod);
+    List<AssignmentDto> findAssignmentsByCourse(@Bind("courseCode") String courseCode);
 
     // === Grades per assignment (för GET /assignments/{id}/grades) ===
     // Alias matchar GradeDto: studentId, grade, comment, gradedAt
@@ -95,10 +93,10 @@ public interface CanvasDao {
         FROM canvas.course c
         JOIN canvas.course_registration r ON r.course_id = c.course_id
         JOIN canvas.student s            ON s.student_id = r.student_id
-        WHERE c.course_code = :kurskod
+        WHERE c.course_code = :courseCode
         ORDER BY s.student_id
     """)
-    List<CanvasStudentDto> listStudentsByCourse(@Bind("kurskod") String kurskod);
+    List<CanvasStudentDto> listStudentsByCourse(@Bind("courseCode") String courseCode);
 
     // === Roster + ev. betyg för specifik assignment ===
     // Alias matchar CanvasRosterItemDto: studentId, name, email, canvasGrade, gradedAt
@@ -116,9 +114,9 @@ public interface CanvasDao {
         JOIN canvas.student s              ON s.student_id = r.student_id
         LEFT JOIN canvas.submission sub    ON sub.student_id = s.student_id AND sub.assignment_id = :assignmentId
         LEFT JOIN canvas.grade g           ON g.submission_id = sub.submission_id
-        WHERE c.course_code = :kurskod
+        WHERE c.course_code = :courseCode
         ORDER BY s.student_id
     """)
-    List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("kurskod") String kurskod,
+    List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("kurskod") String courseCode,
                                                        @Bind("assignmentId") Long assignmentId);
 }
