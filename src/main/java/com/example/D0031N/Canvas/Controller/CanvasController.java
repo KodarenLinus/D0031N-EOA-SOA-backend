@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/*
+* Controller Canvas DB
+*
+* Recevies/ sends data away/from api
+* */
 @RestController
 @RequestMapping("/canvas")
 public class CanvasController {
@@ -21,18 +26,19 @@ public class CanvasController {
 
     private CanvasDao dao() { return jdbi.onDemand(CanvasDao.class); }
 
-    // ==== Kurs → Rum ====
+    // finds rooms based on course code
     @GetMapping("/courses/{courseCode}/rooms")
     public List<CanvasRoomDto> listRoomsByCourse(@PathVariable String courseCode) {
         return dao().listRoomsByCourse(courseCode);
     }
 
-    // ==== Roster per rum ====
+    // Roster per room (get the students list for each room) with room id
     @GetMapping("/rooms/{roomId}/roster")
     public List<CanvasStudentDto> listStudentsByRoom(@PathVariable Long roomId) {
         return dao().listStudentsByRoom(roomId);
     }
 
+    // Assignments for course, search with course code
     @GetMapping("/courses/{courseCode}/assignments")
     public List<AssignmentDto> listAssignments(@PathVariable String courseCode) {
         return dao().findAssignmentsByCourse(courseCode);
@@ -55,7 +61,6 @@ public class CanvasController {
         return dao().listSubmissionsByAssignment(assignmentId);
     }
 
-    // var: @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
     @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
     public GradeDto upsertGrade(@PathVariable Long assignmentId,
                                 @PathVariable String studentId,   // <-- String nu
@@ -67,11 +72,9 @@ public class CanvasController {
                 assignmentId,
                 sid,
                 body.grade(),
-                body.comment(),   // ignoreras i DAO
+                body.comment(),
                 body.gradedAt()
         );
-
-        // Hämta tillbaka som GradeDto(String,...)
         return dao().findGradesByAssignment(assignmentId).stream()
                 .filter(g -> g.studentId().equals(studentId))
                 .findFirst()

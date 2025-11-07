@@ -6,9 +6,13 @@ import org.jdbi.v3.sqlobject.config.RegisterConstructorMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
-
 import java.util.List;
 
+/*
+* Data Access Object
+*
+* This is used to handel database operations for Canvas DB
+* */
 @RegisterConstructorMapper(AssignmentDto.class)
 @RegisterConstructorMapper(GradeDto.class)
 @RegisterConstructorMapper(CanvasStudentDto.class)
