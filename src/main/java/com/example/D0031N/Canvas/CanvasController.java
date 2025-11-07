@@ -1,7 +1,9 @@
+// src/main/java/com/example/D0031N/Canvas/CanvasController.java
 package com.example.D0031N.Canvas;
 
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,48 +18,68 @@ public class CanvasController {
         this.jdbi = jdbi;
     }
 
+    private CanvasDao dao() { return jdbi.onDemand(CanvasDao.class); }
+
+    // ==== Kurs → Rum ====
+    @GetMapping("/courses/{courseCode}/rooms")
+    public List<CanvasRoomDto> listRoomsByCourse(@PathVariable String courseCode) {
+        return dao().listRoomsByCourse(courseCode);
+    }
+
+    // ==== Roster per rum ====
+    @GetMapping("/rooms/{roomId}/roster")
+    public List<CanvasStudentDto> listStudentsByRoom(@PathVariable Long roomId) {
+        return dao().listStudentsByRoom(roomId);
+    }
+
+    // ==== Moduler & Assignments ====
+    @GetMapping("/courses/{courseCode}/modules")
+    public List<CanvasModuleDto> listModulesByCourse(@PathVariable String courseCode) {
+        return dao().listModulesByCourse(courseCode);
+    }
+
     @GetMapping("/courses/{courseCode}/assignments")
     public List<AssignmentDto> listAssignments(@PathVariable String courseCode) {
-        return jdbi.onDemand(CanvasDao.class).findAssignmentsByCourse(courseCode);
+        return dao().findAssignmentsByCourse(courseCode);
     }
 
+    // ==== Grades & Submissions ====
     @GetMapping("/assignments/{assignmentId}/grades")
     public List<GradeDto> listGrades(@PathVariable Long assignmentId) {
-        return jdbi.onDemand(CanvasDao.class).findGradesByAssignment(assignmentId);
+        return dao().findGradesByAssignment(assignmentId);
     }
 
-    // Roster (utan assignment)
-    @GetMapping("/courses/{courseCode}/students")
-    public List<CanvasStudentDto> listStudents(@PathVariable String courseCode) {
-        return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(courseCode);
-    }
-
-    // Roster + Canvas-betyg för given assignment (om du vill se omdömet direkt)
     @GetMapping("/courses/{courseCode}/roster")
     public List<CanvasRosterItemDto> listRosterWithAssignment(@PathVariable String courseCode,
-                                                              @RequestParam(required = false) Long assignmentId) {
-        if (assignmentId == null) {
-            // om assignmentId saknas: bygg roster med null betyg
-            return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(courseCode).stream()
-                    .map(s -> new CanvasRosterItemDto(s.studentId(), s.name(), s.email(), null, null))
-                    .toList();
-        }
-        return jdbi.onDemand(CanvasDao.class).listRosterWithAssignment(courseCode, assignmentId);
+                                                              @RequestParam Long assignmentId) {
+        return dao().listRosterWithAssignment(courseCode, assignmentId);
     }
 
-    // Rättning (skapa/uppdatera betyg) – lärarflödet
+    @GetMapping("/assignments/{assignmentId}/submissions")
+    public List<SubmissionDto> listSubmissionsByAssignment(@PathVariable Long assignmentId) {
+        return dao().listSubmissionsByAssignment(assignmentId);
+    }
+
+    // var: @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
     @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
     public GradeDto upsertGrade(@PathVariable Long assignmentId,
-                                @PathVariable String studentId,
+                                @PathVariable String studentId,   // <-- String nu
                                 @RequestBody GradeUpsertDto body) {
-        jdbi.onDemand(CanvasDao.class)
-                .upsertGrade(assignmentId, studentId, body.grade(), body.comment(), body.gradedAt());
 
-        return jdbi.onDemand(CanvasDao.class)
-                .findGradesByAssignment(assignmentId)
-                .stream()
+        Long sid = Long.valueOf(studentId); // parse till Long för DB
+
+        dao().upsertGrade(
+                assignmentId,
+                sid,
+                body.grade(),
+                body.comment(),   // ignoreras i DAO
+                body.gradedAt()
+        );
+
+        // Hämta tillbaka som GradeDto(String,...)
+        return dao().findGradesByAssignment(assignmentId).stream()
                 .filter(g -> g.studentId().equals(studentId))
                 .findFirst()
-                .orElseGet(() -> new GradeDto(studentId, body.grade(), body.comment(), body.gradedAt()));
+                .orElse(new GradeDto(studentId, body.grade(), body.comment(), body.gradedAt()));
     }
 }

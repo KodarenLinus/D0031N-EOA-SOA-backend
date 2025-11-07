@@ -8,54 +8,131 @@ import org.jdbi.v3.sqlobject.statement.SqlUpdate;
 
 import java.util.List;
 
-// Viktigt: records behöver constructor-mapper (inte BeanMapper)
 @RegisterConstructorMapper(AssignmentDto.class)
 @RegisterConstructorMapper(GradeDto.class)
 @RegisterConstructorMapper(CanvasStudentDto.class)
 @RegisterConstructorMapper(CanvasRosterItemDto.class)
+@RegisterConstructorMapper(CanvasRoomDto.class)
+@RegisterConstructorMapper(CanvasModuleDto.class)
+@RegisterConstructorMapper(SubmissionDto.class)
 public interface CanvasDao {
 
+    // ===== Kurs → Rum =====
     @SqlQuery("""
         SELECT 
-            a.assignment_id AS id,
-            a.name          AS name,
-            a.scale_hint    AS scaleHint,
-            a.type          AS type
-        FROM assignment a
-        JOIN module   m ON a.module_id = m.module_id
-        JOIN course   c ON m.course_id = c.course_id
-        WHERE c.course_code = :courseCode
-        ORDER BY a.assignment_id
+            r.id         AS id,
+            c.kurskod    AS courseCode,
+            r.instanskod AS instanceCode
+        FROM canvas_room r
+        JOIN canvas_course c ON c.id = r.course_id
+        WHERE c.kurskod = :courseCode
+        ORDER BY r.id
+    """)
+    List<CanvasRoomDto> listRoomsByCourse(@Bind("courseCode") String courseCode);
+
+    // ===== Roster per rum =====
+    @SqlQuery("""
+        SELECT 
+            s.id AS studentId,
+            (COALESCE(s.fornamn,'') || ' ' || COALESCE(s.efternamn,'')) AS name,
+            NULL::varchar AS email
+        FROM canvas_room_enrollment e
+        JOIN canvas_student s ON s.id = e.student_id
+        WHERE e.room_id = :roomId AND e.status = 'ACTIVE'
+        ORDER BY s.id
+    """)
+    List<CanvasStudentDto> listStudentsByRoom(@Bind("roomId") Long roomId);
+
+    // ===== Moduler per kurs =====
+    @SqlQuery("""
+        SELECT 
+            m.id         AS id,
+            m.modulkod   AS moduleCode,
+            COALESCE(m.modulnamn,'') AS moduleName
+        FROM canvas_module m
+        JOIN canvas_course c ON c.id = m.course_id
+        WHERE c.kurskod = :courseCode
+        ORDER BY m.id
+    """)
+    List<CanvasModuleDto> listModulesByCourse(@Bind("courseCode") String courseCode);
+
+    // ===== Assignments per kurs (alla moduler) =====
+    @SqlQuery("""
+        SELECT 
+            a.id    AS id,
+            a.name  AS name,
+            NULL    AS scaleHint,
+            a.type  AS type
+        FROM canvas_assignment a
+        JOIN canvas_module m ON a.module_id = m.id
+        JOIN canvas_course c ON m.course_id = c.id
+        WHERE c.kurskod = :courseCode
+        ORDER BY a.id
     """)
     List<AssignmentDto> findAssignmentsByCourse(@Bind("courseCode") String courseCode);
 
-    // === Grades per assignment (för GET /assignments/{id}/grades) ===
-    // Alias matchar GradeDto: studentId, grade, comment, gradedAt
+    // ===== Grades per assignment =====
     @SqlQuery("""
-        SELECT 
-            s.student_id AS studentId,
-            g.grade      AS grade,
-            g.comment    AS comment,
-            to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS') AS gradedAt
-        FROM canvas.grade g
-        JOIN submission s ON s.submission_id = g.submission_id
-        WHERE s.assignment_id = :assignmentId
-        ORDER BY s.student_id
-    """)
+            SELECT 
+                CAST(sub.student_id AS varchar)                AS studentId,
+                g.grade                                        AS grade,
+                NULL                                           AS comment,
+                to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS') AS gradedAt
+            FROM canvas_grade g
+            JOIN canvas_submission sub ON sub.id = g.submission_id
+            WHERE sub.assignment_id = :assignmentId
+            ORDER BY sub.student_id
+        """)
     List<GradeDto> findGradesByAssignment(@Bind("assignmentId") Long assignmentId);
 
-    // === Upsert grade (skapar submission om saknas; uppdaterar annars) ===
+    @SqlQuery("""
+            SELECT 
+                CAST(s.id AS varchar) AS studentId,
+                (COALESCE(s.fornamn,'') || ' ' || COALESCE(s.efternamn,'')) AS name,
+                NULL::varchar AS email,
+                g.grade AS canvasGrade,
+                CASE WHEN g.graded_at IS NULL THEN NULL
+                     ELSE to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS')
+                END AS gradedAt
+            FROM canvas_course c
+            JOIN canvas_module m           ON m.course_id = c.id
+            JOIN canvas_assignment a       ON a.module_id = m.id AND a.id = :assignmentId
+            JOIN canvas_room r             ON r.course_id = c.id
+            JOIN canvas_room_enrollment e  ON e.room_id = r.id AND e.status = 'ACTIVE'
+            JOIN canvas_student s          ON s.id = e.student_id
+            LEFT JOIN canvas_submission sub ON sub.student_id = s.id AND sub.assignment_id = a.id
+            LEFT JOIN canvas_grade g        ON g.submission_id = sub.id
+            WHERE c.kurskod = :courseCode
+            ORDER BY s.id
+        """)
+    List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("courseCode") String courseCode,
+                                                       @Bind("assignmentId") Long assignmentId);
+
+    // ===== Submissions per assignment =====
+    @SqlQuery("""
+        SELECT 
+            sub.id AS submissionId,
+            sub.student_id AS studentId,
+            sub.status AS status,
+            to_char(sub.submitted_at,'YYYY-MM-DD"T"HH24:MI:SS') AS submittedAt
+        FROM canvas_submission sub
+        WHERE sub.assignment_id = :assignmentId
+        ORDER BY sub.student_id
+    """)
+    List<SubmissionDto> listSubmissionsByAssignment(@Bind("assignmentId") Long assignmentId);
+
+    // ===== Upsert Grade (skapa submission om saknas, annars uppdatera) =====
     @SqlUpdate("""
         WITH existing_sub AS (
-          SELECT submission_id
-          FROM submission
+          SELECT id AS submission_id
+          FROM canvas_submission
           WHERE assignment_id = :assignmentId AND student_id = :studentId
         ),
         ins_sub AS (
-          INSERT INTO submission(assignment_id, student_id, submission_date)
-          SELECT :assignmentId, :studentId, now()
+          INSERT INTO canvas_submission(assignment_id, student_id, submitted_at, status)
+          SELECT :assignmentId, :studentId, now(), 'SUBMITTED'
           WHERE NOT EXISTS (SELECT 1 FROM existing_sub)
-          RETURNING submission_id
+          RETURNING id AS submission_id
         ),
         sub_union AS (
           SELECT submission_id FROM ins_sub
@@ -63,60 +140,34 @@ public interface CanvasDao {
           SELECT submission_id FROM existing_sub
         ),
         upd AS (
-          UPDATE canvas.grade g
-          SET grade = :grade,
-              comment = :comment,
+          UPDATE canvas_grade g
+          SET grade     = :grade,
               graded_at = COALESCE(:gradedAt::timestamp, now())
           WHERE g.submission_id = (SELECT submission_id FROM sub_union)
-          RETURNING grade_id
+          RETURNING id
         )
-        INSERT INTO grade(submission_id, grade, comment, graded_at)
+        INSERT INTO canvas_grade(submission_id, grade, graded_at)
         SELECT (SELECT submission_id FROM sub_union),
                :grade,
-               :comment,
                COALESCE(:gradedAt::timestamp, now())
         WHERE NOT EXISTS (SELECT 1 FROM upd)
     """)
     void upsertGrade(@Bind("assignmentId") Long assignmentId,
-                     @Bind("studentId") String studentId,
+                     @Bind("studentId") Long studentId,
                      @Bind("grade") String grade,
-                     @Bind("comment") String comment,
+                     @Bind("comment") String commentIgnored,
                      @Bind("gradedAt") String gradedAtNullable);
 
-    // === Roster utan betyg (alla registrerade studenter i kursen) ===
-    // Alias matchar CanvasStudentDto: studentId, name, email
-    @SqlQuery("""
-        SELECT 
-            s.student_id AS studentId,
-            (COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')) AS name,
-            s.email AS email
-        FROM course c
-        JOIN course_registration r ON r.course_id = c.course_id
-        JOIN student s            ON s.student_id = r.student_id
-        WHERE c.course_code = :courseCode
-        ORDER BY s.student_id
+    // (Valfritt) markera betyg som rapporterat till Ladok
+    @SqlUpdate("""
+        UPDATE canvas_grade
+        SET reported_to_ladok_at = COALESCE(:reportedAt::timestamp, now()),
+            ladok_status = :ladokStatus,
+            ladok_ref_id = :ladokRefId
+        WHERE id = :gradeId
     """)
-    List<CanvasStudentDto> listStudentsByCourse(@Bind("courseCode") String courseCode);
-
-    // === Roster + ev. betyg för specifik assignment ===
-    // Alias matchar CanvasRosterItemDto: studentId, name, email, canvasGrade, gradedAt
-    @SqlQuery("""
-        SELECT 
-            s.student_id AS studentId,
-            (COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')) AS name,
-            s.email AS email,
-            g.grade AS canvasGrade,
-            CASE WHEN g.graded_at IS NULL THEN NULL
-                 ELSE to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS')
-            END AS gradedAt
-        FROM course c
-        JOIN course_registration r  ON r.course_id = c.course_id
-        JOIN student s              ON s.student_id = r.student_id
-        LEFT JOIN submission sub    ON sub.student_id = s.student_id AND sub.assignment_id = :assignmentId
-        LEFT JOIN grade g           ON g.submission_id = sub.submission_id
-        WHERE c.course_code = :courseCode
-        ORDER BY s.student_id
-    """)
-    List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("courseCode") String courseCode,
-                                                       @Bind("assignmentId") Long assignmentId);
+    int markGradeReported(@Bind("gradeId") Long gradeId,
+                          @Bind("ladokStatus") String ladokStatus,
+                          @Bind("reportedAt") String reportedAtNullable,
+                          @Bind("ladokRefId") Long ladokRefId);
 }
