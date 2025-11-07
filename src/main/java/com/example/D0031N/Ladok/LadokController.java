@@ -1,47 +1,38 @@
 package com.example.D0031N.Ladok;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-
-import jakarta.validation.Valid;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/ladok")
 public class LadokController {
-    private final Jdbi jdbi;
 
-    public LadokController(@Qualifier("ladokJdbi") Jdbi jdbi) {
-        this.jdbi = jdbi;
+    private final Jdbi jdbi;
+    public LadokController(@Qualifier("ladokJdbi") Jdbi jdbi) { this.jdbi = jdbi; }
+    private LadokDao dao() { return jdbi.onDemand(LadokDao.class); }
+
+    @GetMapping("/courses/{kurskod}/instances")
+    public List<LadokCourseInstanceDto> listInstances(@PathVariable String kurskod) {
+        return dao().listCourseInstances(kurskod);
+    }
+
+    @GetMapping("/courses/{kurskod}/instances/{instans}/roster")
+    public List<LadokRosterItemDto> roster(@PathVariable String kurskod, @PathVariable String instans) {
+        return dao().rosterByCourseInstance(kurskod, instans);
     }
 
     @PostMapping("/results")
-    public ResponseEntity<ResultResponse> register(@Valid @RequestBody ResultRequest req) {
-        try {
-            LocalDate date = LocalDate.parse(req.datum(), DateTimeFormatter.ISO_LOCAL_DATE);
-
-            int rows = jdbi.onDemand(ResultDao.class)
-                    .insert(
-                            req.personnummer(),
-                            req.kurskod(),
-                            req.modul(),
-                            date,
-                            req.betyg(),
-                            "registrerad"
-                    );
-
-            if (rows == 1) {
-                return ResponseEntity.ok(new ResultResponse("registrerad", "Resultat registrerat"));
-            }
-            return ResponseEntity.internalServerError()
-                    .body(new ResultResponse("fel", "Inget sparat"));
-        } catch (DateTimeParseException e) {
-            return ResponseEntity.badRequest()
-                    .body(new ResultResponse("fel", "Ogiltigt datum, använd yyyy-MM-dd"));
+    @ResponseStatus(HttpStatus.CREATED)
+    public LadokResultResponseDto postResult(@RequestBody LadokResultRequestDto body) {
+        Long id = dao().insertResultIfNotExists(body.personnummer(), body.kurskod(), body.modulkod(),
+                body.datum(), body.betyg());
+        if (id == null) {
+            // redan finns => 409 semantics, men vi returnerar 200-liknande info i body (lättare i labb)
+            return new LadokResultResponseDto(null, "hinder", "Redan registrerad");
         }
+        return new LadokResultResponseDto(id, "registrerad", "OK");
     }
 }
