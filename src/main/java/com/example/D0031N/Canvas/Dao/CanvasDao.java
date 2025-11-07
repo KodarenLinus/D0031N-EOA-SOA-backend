@@ -78,7 +78,7 @@ public interface CanvasDao {
 
     @SqlQuery("""
         SELECT 
-            s.anvandarnamn AS studentId,                         -- ändrat
+            s.anvandarnamn AS studentId,                         
             (COALESCE(s.fornamn,'') || ' ' || COALESCE(s.efternamn,'')) AS name,
             NULL::varchar AS email,
             g.grade AS canvasGrade,
