@@ -35,7 +35,7 @@ public interface LadokDao {
     // Idempotent insert: returnerar genererat id om nytt, annars NULL
     @SqlQuery("""
         INSERT INTO ladok_resultat(personnummer, kurskod, modulkod, datum, betyg, status)
-        VALUES (:pnr, :kurskod, :modulkod, :datum::date, :betyg, 'registrerad')
+        VALUES (TRIM(:pnr), UPPER(TRIM(:kurskod)), TRIM(:modulkod), :datum::date, :betyg, 'registrerad')
         ON CONFLICT (personnummer, kurskod, modulkod) DO NOTHING
         RETURNING id
     """)

@@ -1,6 +1,7 @@
 // src/main/java/com/example/D0031N/Canvas/CanvasDao.java
-package com.example.D0031N.Canvas;
+package com.example.D0031N.Canvas.Dao;
 
+import com.example.D0031N.Canvas.Dto.*;
 import org.jdbi.v3.sqlobject.config.RegisterConstructorMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
@@ -13,7 +14,6 @@ import java.util.List;
 @RegisterConstructorMapper(CanvasStudentDto.class)
 @RegisterConstructorMapper(CanvasRosterItemDto.class)
 @RegisterConstructorMapper(CanvasRoomDto.class)
-@RegisterConstructorMapper(CanvasModuleDto.class)
 @RegisterConstructorMapper(SubmissionDto.class)
 public interface CanvasDao {
 
@@ -33,7 +33,7 @@ public interface CanvasDao {
     // ===== Roster per rum =====
     @SqlQuery("""
         SELECT 
-            s.id AS studentId,
+            s.anvandarnamn AS studentId,                         -- ändrat
             (COALESCE(s.fornamn,'') || ' ' || COALESCE(s.efternamn,'')) AS name,
             NULL::varchar AS email
         FROM canvas_room_enrollment e
@@ -42,19 +42,6 @@ public interface CanvasDao {
         ORDER BY s.id
     """)
     List<CanvasStudentDto> listStudentsByRoom(@Bind("roomId") Long roomId);
-
-    // ===== Moduler per kurs =====
-    @SqlQuery("""
-        SELECT 
-            m.id         AS id,
-            m.modulkod   AS moduleCode,
-            COALESCE(m.modulnamn,'') AS moduleName
-        FROM canvas_module m
-        JOIN canvas_course c ON c.id = m.course_id
-        WHERE c.kurskod = :courseCode
-        ORDER BY m.id
-    """)
-    List<CanvasModuleDto> listModulesByCourse(@Bind("courseCode") String courseCode);
 
     // ===== Assignments per kurs (alla moduler) =====
     @SqlQuery("""
@@ -86,28 +73,27 @@ public interface CanvasDao {
     List<GradeDto> findGradesByAssignment(@Bind("assignmentId") Long assignmentId);
 
     @SqlQuery("""
-            SELECT 
-                CAST(s.id AS varchar) AS studentId,
-                (COALESCE(s.fornamn,'') || ' ' || COALESCE(s.efternamn,'')) AS name,
-                NULL::varchar AS email,
-                g.grade AS canvasGrade,
-                CASE WHEN g.graded_at IS NULL THEN NULL
-                     ELSE to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS')
-                END AS gradedAt
-            FROM canvas_course c
-            JOIN canvas_module m           ON m.course_id = c.id
-            JOIN canvas_assignment a       ON a.module_id = m.id AND a.id = :assignmentId
-            JOIN canvas_room r             ON r.course_id = c.id
-            JOIN canvas_room_enrollment e  ON e.room_id = r.id AND e.status = 'ACTIVE'
-            JOIN canvas_student s          ON s.id = e.student_id
-            LEFT JOIN canvas_submission sub ON sub.student_id = s.id AND sub.assignment_id = a.id
-            LEFT JOIN canvas_grade g        ON g.submission_id = sub.id
-            WHERE c.kurskod = :courseCode
-            ORDER BY s.id
-        """)
+        SELECT 
+            s.anvandarnamn AS studentId,                         -- ändrat
+            (COALESCE(s.fornamn,'') || ' ' || COALESCE(s.efternamn,'')) AS name,
+            NULL::varchar AS email,
+            g.grade AS canvasGrade,
+            CASE WHEN g.graded_at IS NULL THEN NULL
+                 ELSE to_char(g.graded_at,'YYYY-MM-DD"T"HH24:MI:SS')
+            END AS gradedAt
+        FROM canvas_course c
+        JOIN canvas_module m           ON m.course_id = c.id
+        JOIN canvas_assignment a       ON a.module_id = m.id AND a.id = :assignmentId
+        JOIN canvas_room r             ON r.course_id = c.id
+        JOIN canvas_room_enrollment e  ON e.room_id = r.id AND e.status = 'ACTIVE'
+        JOIN canvas_student s          ON s.id = e.student_id
+        LEFT JOIN canvas_submission sub ON sub.student_id = s.id AND sub.assignment_id = a.id
+        LEFT JOIN canvas_grade g        ON g.submission_id = sub.id
+        WHERE c.kurskod = :courseCode
+        ORDER BY s.id
+    """)
     List<CanvasRosterItemDto> listRosterWithAssignment(@Bind("courseCode") String courseCode,
                                                        @Bind("assignmentId") Long assignmentId);
-
     // ===== Submissions per assignment =====
     @SqlQuery("""
         SELECT 

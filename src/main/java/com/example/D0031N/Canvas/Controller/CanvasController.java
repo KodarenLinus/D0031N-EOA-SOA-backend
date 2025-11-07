@@ -1,9 +1,10 @@
 // src/main/java/com/example/D0031N/Canvas/CanvasController.java
-package com.example.D0031N.Canvas;
+package com.example.D0031N.Canvas.Controller;
 
+import com.example.D0031N.Canvas.Dao.CanvasDao;
+import com.example.D0031N.Canvas.Dto.*;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,12 +31,6 @@ public class CanvasController {
     @GetMapping("/rooms/{roomId}/roster")
     public List<CanvasStudentDto> listStudentsByRoom(@PathVariable Long roomId) {
         return dao().listStudentsByRoom(roomId);
-    }
-
-    // ==== Moduler & Assignments ====
-    @GetMapping("/courses/{courseCode}/modules")
-    public List<CanvasModuleDto> listModulesByCourse(@PathVariable String courseCode) {
-        return dao().listModulesByCourse(courseCode);
     }
 
     @GetMapping("/courses/{courseCode}/assignments")
