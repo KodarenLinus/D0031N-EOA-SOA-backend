@@ -1,4 +1,3 @@
-// com/example/D0031N/Canvas/CanvasController.java
 package com.example.D0031N.Canvas;
 
 import org.jdbi.v3.core.Jdbi;
@@ -17,9 +16,9 @@ public class CanvasController {
         this.jdbi = jdbi;
     }
 
-    @GetMapping("/courses/{kurskod}/assignments")
-    public List<AssignmentDto> listAssignments(@PathVariable String kurskod) {
-        return jdbi.onDemand(CanvasDao.class).findAssignmentsByCourse(kurskod);
+    @GetMapping("/courses/{courseCode}/assignments")
+    public List<AssignmentDto> listAssignments(@PathVariable String courseCode) {
+        return jdbi.onDemand(CanvasDao.class).findAssignmentsByCourse(courseCode);
     }
 
     @GetMapping("/assignments/{assignmentId}/grades")
@@ -28,37 +27,37 @@ public class CanvasController {
     }
 
     // Roster (utan assignment)
-    @GetMapping("/courses/{kurskod}/students")
-    public List<CanvasStudentDto> listStudents(@PathVariable String kurskod) {
-        return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(kurskod);
+    @GetMapping("/courses/{courseCode}/students")
+    public List<CanvasStudentDto> listStudents(@PathVariable String courseCode) {
+        return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(courseCode);
     }
 
     // Roster + Canvas-betyg för given assignment (om du vill se omdömet direkt)
-    @GetMapping("/courses/{kurskod}/roster")
-    public List<CanvasRosterItemDto> listRosterWithAssignment(@PathVariable String kurskod,
+    @GetMapping("/courses/{courseCode}/roster")
+    public List<CanvasRosterItemDto> listRosterWithAssignment(@PathVariable String courseCode,
                                                               @RequestParam(required = false) Long assignmentId) {
         if (assignmentId == null) {
             // om assignmentId saknas: bygg roster med null betyg
-            return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(kurskod).stream()
-                    .map(s -> new CanvasRosterItemDto(s.getStudentId(), s.getName(), s.getEmail(), null, null))
+            return jdbi.onDemand(CanvasDao.class).listStudentsByCourse(courseCode).stream()
+                    .map(s -> new CanvasRosterItemDto(s.studentId(), s.name(), s.email(), null, null))
                     .toList();
         }
-        return jdbi.onDemand(CanvasDao.class).listRosterWithAssignment(kurskod, assignmentId);
+        return jdbi.onDemand(CanvasDao.class).listRosterWithAssignment(courseCode, assignmentId);
     }
 
-    // Rättning (skapa/uppdatera betyg) – lärarflödet (låt stå)
+    // Rättning (skapa/uppdatera betyg) – lärarflödet
     @PutMapping("/assignments/{assignmentId}/grades/{studentId}")
     public GradeDto upsertGrade(@PathVariable Long assignmentId,
                                 @PathVariable String studentId,
                                 @RequestBody GradeUpsertDto body) {
         jdbi.onDemand(CanvasDao.class)
-                .upsertGrade(assignmentId, studentId, body.getGrade(), body.getComment(), body.getGradedAt());
+                .upsertGrade(assignmentId, studentId, body.grade(), body.comment(), body.gradedAt());
 
         return jdbi.onDemand(CanvasDao.class)
                 .findGradesByAssignment(assignmentId)
                 .stream()
-                .filter(g -> g.getStudentId().equals(studentId))
+                .filter(g -> g.studentId().equals(studentId))
                 .findFirst()
-                .orElseGet(() -> new GradeDto(studentId, body.getGrade(), body.getComment(), body.getGradedAt()));
+                .orElseGet(() -> new GradeDto(studentId, body.grade(), body.comment(), body.gradedAt()));
     }
 }
