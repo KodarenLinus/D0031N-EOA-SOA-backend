@@ -35,7 +35,6 @@ public class LadokController {
         return dao().rosterByCourseAndModule(kurskod, modulkod);
     }
 
-    // ---- Registrera resultat ----
     @PostMapping("/results")
     @ResponseStatus(HttpStatus.CREATED)
     public LadokResultResponseDto postResult(@RequestBody LadokResultRequestDto body) {
@@ -48,10 +47,8 @@ public class LadokController {
         );
 
         if (id == null) {
-            // redan finns
             return new LadokResultResponseDto(null, "hinder", "Redan registrerad");
         }
-
         return new LadokResultResponseDto(id, "registrerad", "OK");
     }
 }

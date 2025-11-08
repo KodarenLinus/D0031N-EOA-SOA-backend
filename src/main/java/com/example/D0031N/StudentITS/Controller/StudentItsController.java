@@ -1,5 +1,7 @@
-package com.example.D0031N.StudentITS;
+package com.example.D0031N.StudentITS.Controller;
 
+import com.example.D0031N.StudentITS.Dto.ItsPersonLookupDto;
+import com.example.D0031N.StudentITS.Dao.StudentItsDao;
 import org.jdbi.v3.core.Jdbi;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -13,6 +15,7 @@ public class StudentItsController {
     public StudentItsController(@Qualifier("studentJdbi") Jdbi jdbi) { this.jdbi = jdbi; }
     private StudentItsDao dao() { return jdbi.onDemand(StudentItsDao.class); }
 
+    // This will give us personumer with student-id
     @GetMapping("/personnummer")
     @ResponseStatus(HttpStatus.OK)
     public ItsPersonLookupDto personnummer(@RequestParam String anvandarnamn) {

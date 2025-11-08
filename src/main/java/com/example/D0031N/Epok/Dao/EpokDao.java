@@ -1,5 +1,6 @@
-package com.example.D0031N.Epok;
+package com.example.D0031N.Epok.Dao;
 
+import com.example.D0031N.Epok.Dto.EpokModuleDto;
 import org.jdbi.v3.sqlobject.config.RegisterConstructorMapper;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;

@@ -1,4 +1,4 @@
-package com.example.D0031N.Epok;
+package com.example.D0031N.Epok.Dto;
 
 public record EpokModuleDto(
         String modulkod,
