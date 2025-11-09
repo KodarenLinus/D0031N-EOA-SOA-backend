@@ -32,6 +32,7 @@ public interface LadokDao {
         JOIN ladok_kurs k ON k.id = kt.kurs_id
         LEFT JOIN ladok_resultat lr ON lr.kurskod = :courseCode
             AND lr.modulkod = :moduleCode
+            AND lr.personnummer = p.personnummer
         WHERE k.kurskod = :courseCode
         ORDER BY p.efternamn, p.fornamn
     """)

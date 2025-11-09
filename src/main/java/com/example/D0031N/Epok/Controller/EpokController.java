@@ -25,8 +25,12 @@ public class EpokController {
     public List<EpokModuleDto> listModules(@PathVariable String kurskod,
                                            @RequestParam(defaultValue = "true") boolean onlyActive) {
         List<EpokModuleDto> dto = dao().listModules(kurskod, onlyActive);
-        if (dto == null) throw new org.springframework.web.server.ResponseStatusException(
-                HttpStatus.NOT_FOUND, "No active modules for course " + kurskod + " or kurskod is invalid.");
+        if (dto == null || dto.isEmpty()) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No active modules found for course " + kurskod + " or kurskod is invalid."
+            );
+        }
         return dto;
     }
 }
