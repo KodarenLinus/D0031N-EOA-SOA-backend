@@ -18,14 +18,10 @@ public interface LadokDao {
         SELECT
             k.kurskod AS kurskod,
             p.personnummer AS personnummer,
-            p.fornamn AS fornamn,
-            p.efternamn AS efternamn,
             r.status AS registreringsStatus,
             (lr.id IS NOT NULL) AS sent,
             lr.status AS ladokStatus,
-            lr.betyg AS ladokBetyg,
-            lr.datum AS resultatDatum,
-            lr.created_at AS registeredAt
+            lr.betyg AS ladokBetyg
         FROM ladok_registrering r
         JOIN ladok_person p ON p.id  = r.person_id
         JOIN ladok_kurstillfalle kt ON kt.id = r.kurstillfalle_id

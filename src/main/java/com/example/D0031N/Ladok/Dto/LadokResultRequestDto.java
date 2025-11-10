@@ -17,7 +17,7 @@ import java.time.LocalDate;
  * }
  * */
 public record LadokResultRequestDto(
-        @Pattern(regexp = "^[0-9]{10}-[0-9]{4}$")
+        @Pattern(regexp = "^[0-9]{8}-[0-9]{4}$")
         String personnummer,
         String kurskod,
         @Pattern(regexp = "^[0-9]{4}$")
