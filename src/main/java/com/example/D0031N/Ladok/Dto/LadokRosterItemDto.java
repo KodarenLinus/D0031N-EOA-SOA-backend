@@ -18,5 +18,6 @@ public record LadokRosterItemDto(
         String registreringsStatus,
         Boolean sent,
         String ladokStatus,
-        String ladokBetyg
+        String ladokBetyg,
+        String datum
 ) {}

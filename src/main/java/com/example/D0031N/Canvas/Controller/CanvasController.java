@@ -4,6 +4,7 @@ package com.example.D0031N.Canvas.Controller;
 import com.example.D0031N.Canvas.Dao.CanvasDao;
 import com.example.D0031N.Canvas.Dto.*;
 import org.jdbi.v3.core.Jdbi;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

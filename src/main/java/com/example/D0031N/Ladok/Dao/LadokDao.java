@@ -21,7 +21,8 @@ public interface LadokDao {
             r.status AS registreringsStatus,
             (lr.id IS NOT NULL) AS sent,
             lr.status AS ladokStatus,
-            lr.betyg AS ladokBetyg
+            lr.betyg AS ladokBetyg,
+            lr.datum as datum
         FROM ladok_registrering r
         JOIN ladok_person p ON p.id  = r.person_id
         JOIN ladok_kurstillfalle kt ON kt.id = r.kurstillfalle_id
